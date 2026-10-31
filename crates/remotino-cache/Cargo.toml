@@ -1,0 +1,18 @@
+[package]
+name = "remotino-cache"
+version = "0.1.0"
+description = "Local SQLite cache of the verified audit chain, so startup never blocks on the network"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+remotino-crypto = { version = "0.1.0", path = "../remotino-crypto" }
+# Bundled so there is no system SQLite to install - the cache is a private implementation
+# detail, not a database the user manages.
+rusqlite = { version = "0.40.1", features = ["bundled"] }
+thiserror = "2.0.19"
+
+[lints]
+workspace = true

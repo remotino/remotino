@@ -1,0 +1,31 @@
+# Spike working directory - a disposable clone of IronRDP, rebuilt by run-spike.
+# The patches in spikes/rdp/patches/ are the durable part; this is not.
+spikes/rdp/.work/
+
+# Spike outputs
+spikes/rdp/logs/
+spikes/rdp/out*.png
+spikes/rdp/out*.bmp
+
+# Rust
+target/
+**/*.rs.bk
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Cargo build output. Never on the share - see CLAUDE.md.
+target/
+/dist/
+/dist*/
+
+# Wrangler local state/cache
+.wrangler/
+
+# Sidecar staged for Tauri externalBin (generated copy of rdp-host)
+remotino-app/src-tauri/binaries/
+
+# Claude Code local config
+.claude/

@@ -1,0 +1,40 @@
+[package]
+name = "remotino-crypto"
+version = "0.1.0"
+description = "Remotino cryptographic core: identity, envelope encryption, escrow, and the signed audit chain"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Signing identity. Ed25519 rather than RSA: 64-byte signatures and microsecond
+# signing, because every audit entry is signed (DESIGN.md 4, 5).
+ed25519-dalek = { version = "3.0.0", features = ["rand_core", "zeroize"] }
+
+# Key wrapping. X25519 static secrets so content keys can be sealed to a
+# recipient's long-lived public key (DESIGN.md 4).
+x25519-dalek = { version = "3.0.0", features = ["static_secrets", "zeroize"] }
+
+# Content encryption. XChaCha20-Poly1305 for its 192-bit nonce: random nonces are
+# safe without a counter, which matters when several machines append concurrently.
+chacha20poly1305 = "0.11.0"
+
+# Passphrase KDF. The passphrase is the login to the tool, so this is the only
+# thing between a stolen laptop and the vault.
+argon2 = "0.5.3"
+
+sha2 = "0.11.0"
+zeroize = { version = "1.9.0", features = ["derive"] }
+subtle = "2.6.1"
+
+serde = { version = "1.0.229", features = ["derive"] }
+ciborium = "0.2.2"
+hex = "0.4.3"
+thiserror = "2.0.19"
+getrandom = "0.4.3"
+serde-big-array = "0.5.1"
+hkdf = "0.13.0"

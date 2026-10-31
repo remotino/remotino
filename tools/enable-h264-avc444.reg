@@ -1,0 +1,32 @@
+Windows Registry Editor Version 5.00
+
+; ===========================================================================
+; Enable H.264/AVC 444 graphics mode for Remote Desktop
+;
+; RUN THIS ON THE MACHINE YOU CONNECT *TO* (the RDP host), NOT on the client.
+; These are server-side encoder settings. Putting them on your Windows 11
+; client does nothing unless that client is also an RDP target.
+;
+; Supported on: Windows 10 / Windows Server 2016 and later.
+;   -> Server 2016, 2019, 2022, 2025 and Windows 10 / 11 all qualify.
+;   -> Older (Server 2012 R2, Windows 8.1) support only AVC 4:2:0, not 444.
+;
+; Requires admin. Restart the host (or the Remote Desktop Services service)
+; afterwards.
+;
+; Revert with disable-h264-avc444.reg in this folder.
+; ===========================================================================
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services]
+
+; Prioritize H.264/AVC 444 Graphics mode for Remote Desktop connections.
+; Used when both client and server support AVC 444 (non-vGPU scenarios).
+; 4:4:4 chroma keeps text sharp; plain AVC 4:2:0 blurs it.
+"AVC444ModePreferred"=dword:00000001
+
+; Configure H.264/AVC hardware encoding for Remote Desktop connections.
+; Needs a GPU exposing an H.264 encoder through Media Foundation. Without one
+; the host falls back to software encoding, which costs CPU per session -
+; check CPU use after enabling if the host has no capable GPU.
+; Each remote monitor consumes one hardware encoder.
+"AVCHardwareEncodePreferred"=dword:00000001

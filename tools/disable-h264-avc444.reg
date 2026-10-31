@@ -1,0 +1,18 @@
+Windows Registry Editor Version 5.00
+
+; ===========================================================================
+; Revert H.264/AVC 444 graphics mode to the Windows default (off).
+;
+; Sets both policy values to 0 rather than deleting them, so the state is
+; explicit and visible in gpedit rather than merely absent.
+;
+; To remove the policy values entirely instead, use the "-" form:
+;   "AVC444ModePreferred"=-
+;
+; Run on the RDP host, as admin. Restart afterwards.
+; ===========================================================================
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services]
+
+"AVC444ModePreferred"=dword:00000000
+"AVCHardwareEncodePreferred"=dword:00000000

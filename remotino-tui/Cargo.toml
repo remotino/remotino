@@ -1,0 +1,27 @@
+[package]
+name = "remotino-tui"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+publish = false
+description = "Terminal-native SSH connection manager over the Remotino encrypted store"
+
+[[bin]]
+name = "remotino"
+path = "src/main.rs"
+
+[dependencies]
+remotino-crypto = { path = "../crates/remotino-crypto" }
+remotino-model = { path = "../crates/remotino-model" }
+remotino-store = { path = "../crates/remotino-store" }
+
+# Match the app: ring backend, not aws-lc-rs (which needs NASM on Windows).
+russh = { version = "0.62.4", default-features = false, features = ["flate2", "rsa", "ring"] }
+ratatui = "0.29"
+crossterm = "0.28"
+rpassword = "7"
+dirs = "6"
+hex = "0.4"
+ciborium = "0.2"
+anyhow = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-util", "net", "sync", "time"] }

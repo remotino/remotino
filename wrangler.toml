@@ -1,0 +1,18 @@
+# Cloudflare Workers config for the remotino.app landing page.
+#
+# The site is a single static file (site/index.html) served as Worker static assets - no
+# server code. Deploy with:
+#
+#     npx wrangler deploy
+#
+# Authenticate once first (opens your browser): `npx wrangler login`. The custom domain
+# (remotino.app) is bound to this Worker in the Cloudflare dashboard and persists across
+# deploys - this config only updates the served assets.
+#
+# `name` must match the existing Worker so a deploy updates it rather than creating a new one.
+
+name = "remotino"
+compatibility_date = "2025-08-12"
+
+[assets]
+directory = "./site"

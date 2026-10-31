@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Remotino — Docs</title>
+<meta name="description" content="How to use Remotino: first run, setting up a shared MSSQL/Postgres backend, migrating local bookmarks, adding users, and sharing folders and credentials." />
+<style>
+  :root {
+    --bg: #f2f5f2;
+    --bg-2: #ffffff;
+    --bg-3: #eaefea;
+    --ink: #0f1f18;
+    --ink-2: #3b4a44;
+    --ink-3: #6a7a72;
+    --line: #dde3de;
+    --line-2: #cdd5cf;
+    --accent: #0f9e58;
+    --accent-ink: #ffffff;
+    --code-bg: #eef2ee;
+    --shadow-sm: 0 2px 14px rgba(16, 34, 26, 0.06);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0f13;
+      --bg-2: #111a1f;
+      --bg-3: #0e161b;
+      --ink: #e9f0ea;
+      --ink-2: #aab7af;
+      --ink-3: #6f7d75;
+      --line: #1d2a2f;
+      --line-2: #26353b;
+      --accent: #35e08b;
+      --accent-ink: #04130b;
+      --code-bg: #0e1519;
+      --shadow-sm: 0 2px 16px rgba(0, 0, 0, 0.35);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Top bar */
+  nav.top {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-in {
+    width: min(1120px, 92%); margin-inline: auto;
+    height: 56px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { font-family: var(--mono); font-weight: 700; letter-spacing: -0.02em; }
+  .brand a { color: var(--ink); }
+  .brand .mark { color: var(--accent); }
+  .nav-links { display: flex; gap: 20px; align-items: center; font-size: 0.9rem; }
+  .nav-links a { color: var(--ink-2); }
+  .nav-links a:hover { color: var(--ink); text-decoration: none; }
+  .nav-ghost { border: 1px solid var(--line-2); border-radius: 7px; padding: 5px 11px; }
+
+  /* Layout */
+  .doc { width: min(1120px, 92%); margin: 32px auto 80px; display: grid; grid-template-columns: 220px 1fr; gap: 40px; }
+  aside.toc { position: sticky; top: 80px; align-self: start; font-size: 0.9rem; }
+  aside.toc .lbl { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
+  aside.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  aside.toc a { display: block; color: var(--ink-2); padding: 4px 8px; border-radius: 6px; border-left: 2px solid transparent; }
+  aside.toc a:hover { color: var(--ink); background: var(--bg-3); text-decoration: none; }
+
+  main { min-width: 0; }
+  h1 { font-family: var(--mono); font-size: 1.9rem; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .lede { color: var(--ink-2); margin: 0 0 8px; }
+  section { padding-top: 28px; margin-top: 20px; border-top: 1px solid var(--line); }
+  section:first-of-type { border-top: 0; }
+  h2 { font-family: var(--mono); font-size: 1.3rem; letter-spacing: -0.02em; margin: 0 0 4px; scroll-margin-top: 72px; }
+  h2 .n { color: var(--accent); }
+  h3 { font-family: var(--mono); font-size: 1.02rem; margin: 24px 0 6px; }
+  p { margin: 10px 0; color: var(--ink); }
+  ul, ol { margin: 10px 0; padding-left: 22px; }
+  li { margin: 5px 0; }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  strong { color: var(--ink); }
+  kbd { font-family: var(--mono); font-size: 0.82em; background: var(--bg-3); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; }
+
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: step; position: relative; padding-left: 34px; margin: 12px 0; }
+  .steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent); font-family: var(--mono); font-size: 0.78rem; font-weight: 700;
+    display: grid; place-items: center;
+  }
+
+  .callout { margin: 14px 0; padding: 12px 14px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--bg-2); box-shadow: var(--shadow-sm); }
+  .callout .tag { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+  .callout.warn { border-color: color-mix(in srgb, var(--rdp, #b0730d) 45%, var(--line-2)); }
+  .callout.warn .tag { color: var(--rdp, #b0730d); }
+
+  .prompt { font-family: var(--mono); font-size: 0.9rem; background: var(--code-bg); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; margin: 12px 0; }
+  .prompt b { color: var(--accent); }
+  .prompt .btns { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .prompt .btns span { border: 1px solid var(--line-2); border-radius: 6px; padding: 3px 10px; font-size: 0.82rem; }
+  .prompt .btns .go { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  footer { border-top: 1px solid var(--line); }
+  .foot-in { width: min(1120px, 92%); margin-inline: auto; padding: 22px 0; color: var(--ink-3); font-size: 0.85rem; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+  @media (max-width: 820px) {
+    .doc { grid-template-columns: 1fr; gap: 20px; }
+    aside.toc { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="nav-in">
+    <div class="brand"><a href="/"><span class="mark">&rsaquo;_</span> remotino</a></div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="#first-run">First run</a>
+      <a href="#sharing">Sharing</a>
+      <a class="nav-ghost" href="https://github.com/remotino/remotino">GitHub&nbsp;&#8599;</a>
+    </div>
+  </div>
+</nav>
+
+<div class="doc">
+  <aside class="toc">
+    <div class="lbl">User guide</div>
+    <ol>
+      <li><a href="#first-run">1 · First run</a></li>
+      <li><a href="#shared-backend">2 · Shared backend</a></li>
+      <li><a href="#migrating">3 · Migrating bookmarks</a></li>
+      <li><a href="#adding-users">4 · Adding users</a></li>
+      <li><a href="#sharing">5 · Sharing</a></li>
+    </ol>
+  </aside>
+
+  <main>
+    <h1>Remotino — User Guide</h1>
+    <p class="lede">An encrypted RDP &amp; SSH connection manager. Your connections and secrets are sealed on your machine before they ever reach a server — access is enforced by keys, not by rules a database could be tricked into ignoring.</p>
+
+    <section id="first-run">
+      <h2><span class="n">1 ·</span> First run</h2>
+
+      <h3>Install</h3>
+      <p>Remotino is portable. Unzip the build and keep the two files together: <code>remotino-app.exe</code> (the app) and <code>rdp-host.exe</code> (the RDP engine, which the app launches — it must sit next to the app). Double-click <code>remotino-app.exe</code>. On Windows 11 nothing else is needed; on Windows 10, if the window is blank, install Microsoft's <em>Evergreen WebView2 Runtime</em>.</p>
+
+      <h3>Create your identity</h3>
+      <p>On first launch you'll <strong>create a new identity</strong> with a passphrase. That passphrase unlocks a key pair that seals everything you store — it is <strong>never saved and never sent</strong>. If you forget it there is no reset, so keep it somewhere safe. By default everything is stored <strong>on this machine</strong> in a local encrypted store; no server is required to start.</p>
+
+      <h3>Add connections</h3>
+      <ul>
+        <li>Create <strong>folders</strong> and <strong>connections</strong> from the tree or toolbar. Folders nest; drag to reorganise.</li>
+        <li>A connection has a <strong>kind</strong> (RDP or SSH), a <strong>name</strong>, a <strong>host</strong>, and a <strong>port</strong>.</li>
+        <li>Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (⌘K on macOS) for the <strong>command palette</strong>, and use the filter box to narrow the tree instantly.</li>
+      </ul>
+      <p>Open a connection for an embedded session in a tab — an RDP desktop (dynamic resize, remote cursor, a <strong>Ctrl+Alt+Del</strong> button) or an SSH terminal.</p>
+
+      <h3>The credential vault</h3>
+      <p>Store a password or SSH key once and link it to connections; Remotino fills it in on connect. Each credential is sealed under <strong>its own key</strong> and decrypted only inside the app's backend at connect time — the secret never reaches the on-screen UI, and never sits inside a connection definition (only a reference does).</p>
+    </section>
+
+    <section id="shared-backend">
+      <h2><span class="n">2 ·</span> Setting up a shared backend</h2>
+      <p>A shared backend lets a team work from one repository and share folders and credentials. Remotino supports <strong>MSSQL Server</strong> and <strong>PostgreSQL</strong>. The database only ever holds encrypted blobs and a per-user, least-privilege login — untrusted storage, not a trusted authority. Do this once, as the admin.</p>
+
+      <h3>1 · Point Remotino at the database</h3>
+      <p>Open <strong>Connection settings</strong> and pick <strong>SQL Server</strong> or <strong>Postgres</strong>. Enter the host, port, and database (for SQL Server, an optional instance). The default port fills in (1433 / 5432).</p>
+
+      <h3>TLS (Postgres)</h3>
+      <p>Tick <strong>Require TLS</strong>, then <strong>Verify certificate</strong>. Remotino shows the certificate's <strong>SHA-256 fingerprint</strong>, subject, issuer and validity. Compare the fingerprint out of band, then <strong>Trust this certificate</strong>. This is trust-on-first-use pinning (the SSH known-hosts model): you approve the exact certificate once, and any later change is refused. The pin travels inside setup codes, so provisioned users trust the same certificate.</p>
+
+      <h3>2 · Initialize the database</h3>
+      <p>Click <strong>Set up / add users…</strong> and sign in with admin rights <strong>once</strong> (nothing is stored): Windows/<code>sa</code> for SQL Server, or a superuser like <code>postgres</code> for Postgres. Click <strong>Initialize database</strong> — Remotino creates the database if missing, the tables, a least-privilege <code>remotino_user</code> role, and its SELECT/INSERT grants. Append-only is enforced by the database itself: UPDATE, DELETE and TRUNCATE on the log are rejected.</p>
+
+      <h3>3 · Provision your own login</h3>
+      <p>Under <strong>Provision a login</strong>, leave the target as <strong>Yourself</strong> and click <strong>Create login</strong>. Remotino creates a least-privilege login with a strong random password <strong>sealed to your identity</strong> — nothing shown or typed — and switches you to it. Click <strong>Save</strong>; the app locks and reopens on the shared backend.</p>
+      <div class="callout"><span class="tag">Tip</span>If you had local connections, Remotino now asks whether to bring them along — see <a href="#migrating">Migrating bookmarks</a>.</div>
+    </section>
+
+    <section id="migrating">
+      <h2><span class="n">3 ·</span> Bringing your local bookmarks along</h2>
+      <p>If you've used Remotino on <strong>This machine</strong> and then switch to a shared backend, your folders, connections and vault are in the <em>local</em> store — the shared database starts empty. So when you save a local→shared switch with local entries, Remotino asks:</p>
+      <div class="prompt">
+        <b>Bring your bookmarks along?</b><br>
+        Your local store has <i>N connections, M credentials and K folders</i>. Copy them into the shared database so it isn't empty?
+        <div class="btns"><span>Start fresh</span><span class="go">Bring them along</span></div>
+      </div>
+
+      <h3>What actually happens</h3>
+      <p>The local store and the shared database are <strong>two separate signed hash chains</strong>, so raw entries can't be transplanted. Instead Remotino <strong>replays</strong> them: it decrypts your local tree and vault with your unlocked identity and re-creates each folder, connection and credential as <strong>new events</strong> on the shared chain (fresh ids, re-sealed content), preserving hierarchy and credential links. Your <strong>local store is left untouched</strong>.</p>
+
+      <div class="callout warn"><span class="tag">One-way, into an empty repository</span>Migration refuses if the shared database already has entries, so it can never duplicate a tree. If a colleague already populated the shared repository, choose <strong>Start fresh</strong> and you'll get access to shared folders as they're granted to you.</div>
+    </section>
+
+    <section id="adding-users">
+      <h2><span class="n">4 ·</span> Adding users</h2>
+      <p>The admin gives each teammate two things: an <strong>enrolment</strong> (so they can be granted access cryptographically) and a <strong>login</strong> to the database.</p>
+
+      <ol class="steps">
+        <li><strong>The teammate sends their identity.</strong> They open the <strong>Users</strong> panel (the people icon), and under <em>Your identity</em> click <strong>Copy</strong> and send you the string. It's a public key — safe over any channel. They should also set a display name so you can share things back to them.</li>
+        <li><strong>You enrol them.</strong> In your <strong>Users</strong> panel, under <em>Enrol a user</em>, type their name, paste their identity string, and click <strong>Enrol</strong>.</li>
+        <li><strong>You give them a login.</strong> Next to the enrolled user, click <strong>Setup code</strong>. Remotino provisions a least-privilege login with a random password <strong>sealed to their identity</strong>, and packages the host, database, sealed password and (for Postgres) the TLS pin into one <strong>setup code</strong>. Send it — it's safe over chat.</li>
+        <li><strong>They apply the code.</strong> In <strong>Connection settings</strong> they pick the same backend, click <strong>I have a setup code instead</strong>, paste, <strong>Apply code</strong> → <strong>Save</strong>.</li>
+      </ol>
+
+      <div class="callout"><span class="tag">Why two steps</span><strong>Enrolment</strong> is cryptographic access — it lets you wrap folder and credential keys to that person. <strong>The database login</strong> is about reaching the store at all, with least privilege (SELECT/INSERT). Even with a login, a user reads only the ciphertext of folders they hold a key for.</div>
+    </section>
+
+    <section id="sharing">
+      <h2><span class="n">5 ·</span> Sharing folders &amp; credentials</h2>
+      <p>Granting a folder or credential <strong>wraps its content key to the recipient's public key</strong>, so "who can read this" is who mathematically holds the key — not a flag the server enforces. You can share with anyone you've enrolled.</p>
+
+      <h3>Share a folder or credential</h3>
+      <p>Right-click a folder or credential in the tree and choose <strong>Share…</strong>. Toggle a user <strong>on</strong> to grant, <strong>off</strong> to revoke. Granting a credential lets a teammate <strong>use it to connect</strong> without ever seeing the secret — it's decrypted only inside their app at connect time. Shared items show a small <strong>shared</strong> tag.</p>
+
+      <h3>Revoking</h3>
+      <p><strong>Revocation is forward-only.</strong> It stops the user from reading <em>future</em> changes, but treat anything they already had as known to them. For a credential that must be truly retired, rotate the secret on the host after revoking.</p>
+
+      <h3>What a compromised server sees</h3>
+      <p>Nothing useful: encrypted names and connection details, content keys <strong>wrapped to public keys</strong> (unusable without the private half, which never leaves a user's machine), and a signed append-only chain. Compromise the database and you get ciphertext and the <em>shape</em> of activity — never a password.</p>
+
+      <h3>Auditing</h3>
+      <p>The toolbar's <strong>audit log</strong> shows every change — when, who, and a plain-English action, newest first. It re-walks the signed hash chain and shows a <strong>Chain intact</strong> badge, flipping to <strong>Tampering detected</strong> if any row was deleted, reordered or edited.</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <span>Remotino &middot; open-source, cryptographically-enforced RDP &amp; SSH.</span>
+    <span><a href="/">← Back to remotino.app</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

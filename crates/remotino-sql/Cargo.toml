@@ -1,0 +1,20 @@
+[package]
+name = "remotino-sql"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ciborium = "0.2.2"
+getrandom = "0.4.3"
+remotino-crypto = { version = "0.1.0", path = "../remotino-crypto" }
+thiserror = "2.0.19"
+tiberius = { version = "0.12.3", default-features = false, features = ["tds73", "rustls", "sql-browser-tokio", "chrono", "winauth"] }
+tokio = { version = "1.53.1", features = ["rt", "net", "macros", "time", "io-util"] }
+tokio-util = { version = "0.7.19", features = ["compat"] }
+zeroize = "1.9.0"
+
+[lints]
+workspace = true

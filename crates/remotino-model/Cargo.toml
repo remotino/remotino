@@ -1,0 +1,18 @@
+[package]
+name = "remotino-model"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+ciborium = "0.2.2"
+getrandom = "0.4.3"
+hex = "0.4.3"
+remotino-crypto = { version = "0.1.0", path = "../remotino-crypto" }
+serde = { version = "1.0.229", features = ["derive"] }
+thiserror = "2.0.19"
+
+[lints]
+workspace = true

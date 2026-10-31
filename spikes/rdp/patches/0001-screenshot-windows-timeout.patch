@@ -1,0 +1,17 @@
+diff --git a/crates/ironrdp/examples/screenshot.rs b/crates/ironrdp/examples/screenshot.rs
+index b62a4c5..ba944d1 100644
+--- a/crates/ironrdp/examples/screenshot.rs
++++ b/crates/ironrdp/examples/screenshot.rs
+@@ -359,7 +359,11 @@ fn active_stage(
+     'outer: loop {
+         let (action, payload) = match framed.read_pdu() {
+             Ok((action, payload)) => (action, payload),
+-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break 'outer,
++            // On Unix a SO_RCVTIMEO expiry surfaces as EAGAIN -> WouldBlock, but on
++            // Windows it is WSAETIMEDOUT (10060) -> TimedOut. Accept both, otherwise
++            // the intended "no more activity" exit path never fires on Windows and the
++            // example fails instead of writing the image.
++            Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => break 'outer,
+             Err(e) => return Err(anyhow::Error::new(e).context("read frame")),
+         };
+ 

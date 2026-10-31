@@ -1,0 +1,134 @@
+/* Remotino design tokens.
+ *
+ * Lifted verbatim from design/Remotino.dc.html (the design-app deliverable) so the app
+ * and the mockup never drift. Do not hand-tune values here - change them in the design
+ * app and re-export. See design/README.md.
+ *
+ * Dark is the default; light is the [data-theme="light"] override the shell stamps on
+ * <html> from the theme toggle. */
+
+:root {
+  --bg: #0b0d0f;
+  --bg-2: #111417;
+  --bg-3: #191d21;
+  --bg-inset: #08090a;
+  --border: #20262b;
+  --border-2: #2b3237;
+  --text: #dfe4e8;
+  --text-dim: #98a2ab;
+  --text-mute: #616b73;
+  --accent: #3fd07d;
+  --rdp: #5aa2e0;
+  --ok: #3fd07d;
+  --warn: #e0a83f;
+  --err: #e05d5d;
+  --sel: color-mix(in srgb, var(--accent) 13%, transparent);
+  --stripe: rgba(255, 255, 255, 0.018);
+  --ssh: var(--accent);
+  --row-h: 22px;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Cascadia Code",
+    "Liberation Mono", monospace;
+  --ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root[data-theme="light"] {
+  --bg: #f3f4f6;
+  --bg-2: #ffffff;
+  --bg-3: #e9ecef;
+  --bg-inset: #0a0c0e;
+  --border: #dde1e5;
+  --border-2: #c7ced4;
+  --text: #191d21;
+  --text-dim: #5c666e;
+  --text-mute: #8a949c;
+  --accent: #178f4e;
+  --rdp: #2f6fb0;
+  --ok: #178f4e;
+  --warn: #b57e12;
+  --err: #c23b3b;
+  --stripe: rgba(0, 0, 0, 0.025);
+  --overlay: rgba(20, 24, 28, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 13px;
+  /* A desktop app, not a web page: no text selection drag, no overscroll bounce. */
+  user-select: none;
+  overflow: hidden;
+}
+
+input,
+button,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+input,
+textarea {
+  user-select: text;
+}
+input::placeholder {
+  color: var(--text-mute);
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-mute);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes rt-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes rt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rt-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

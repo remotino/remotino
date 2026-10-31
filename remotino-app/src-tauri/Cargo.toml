@@ -1,0 +1,49 @@
+[package]
+name = "remotino-app"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "remotino_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# The Remotino backend. The app is the one place all four layers come together.
+remotino-crypto = { path = "../../crates/remotino-crypto" }
+remotino-model = { path = "../../crates/remotino-model" }
+remotino-sql = { path = "../../crates/remotino-sql" }
+remotino-pg = { path = "../../crates/remotino-pg" }
+remotino-cache = { path = "../../crates/remotino-cache" }
+ciborium = "0.2.2"
+remotino-store = { version = "0.1.0", path = "../../crates/remotino-store" }
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+hex = "0.4.3"
+# Default crypto backend is aws-lc-rs, which needs NASM to build on Windows. `ring` is a
+# pure-enough backend that builds with just the MSVC toolchain we already require.
+russh = { version = "0.62.4", default-features = false, features = ["flate2", "rsa", "ring"] }
+tokio = { version = "1.53.1", features = ["rt", "sync", "macros", "io-util", "time", "net", "process"] }
+
+# RDP does NOT live here. The IronRDP stack (sspi -> picky) pins a pre-release RustCrypto
+# snapshot that cannot share a binary with russh's stable one, so the RDP engine is a
+# separate sidecar binary (../../rdp-host) with its own Cargo.lock. The app spawns it and
+# speaks a small framed protocol over its stdio. See rdp-host/README.md.
+
+# Deliberately NOT `[lints] workspace = true`: the crypto core denies unwrap/panic/indexing
+# because it parses untrusted input, but UI glue is a different context where that ban is
+# noise. The strictness lives where the risk is.
+

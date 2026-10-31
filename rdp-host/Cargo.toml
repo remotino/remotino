@@ -1,0 +1,40 @@
+# Standalone sidecar: the RDP engine, deliberately OUTSIDE the main workspace so it keeps its
+# own Cargo.lock. IronRDP's CredSSP path (sspi -> picky) pins a pre-release RustCrypto
+# snapshot that cannot coexist with the main app's russh + remotino-crypto (stable RustCrypto)
+# in one binary. Isolating it in its own process with its own pinned packages is the durable
+# fix (per project convention: engines with incompatible dep stacks get their own process).
+[package]
+name = "rdp-host"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Empty workspace table => this is its own workspace root, independent of ../Cargo.toml.
+[workspace]
+
+[[bin]]
+name = "rdp-host"
+path = "src/main.rs"
+
+[dependencies]
+ironrdp = { version = "0.17.0", features = ["connector", "session", "graphics", "input", "displaycontrol", "dvc", "svc", "cliprdr"] }
+ironrdp-tokio = "0.10.0"
+# rustls with the ring provider: the default (aws-lc-rs) needs NASM on Windows.
+ironrdp-tls = { version = "0.2.2", default-features = false, features = ["rustls-ring"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-util", "io-std", "net", "sync", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+sha2 = "0.10"
+hex = "0.4"
+
+# The clipboard bridge is text-only, over one CLIPRDR backend with per-platform text access
+# (see src/clipboard.rs): the Win32 clipboard on Windows, NSPasteboard (via arboard) on macOS.
+# On other platforms the CLIPRDR channel simply isn't registered.
+[target.'cfg(windows)'.dependencies]
+clipboard-win = "5"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+arboard = "3"

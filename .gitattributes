@@ -1,0 +1,27 @@
+# Line endings must be enforced per file type, not left to core.autocrlf.
+# This repo is edited on Windows and run on macOS, so getting it wrong breaks things
+# in ways that look unrelated to line endings.
+
+* text=auto
+
+# Shell scripts MUST stay LF. A CRLF shebang makes macOS report
+# "bad interpreter: /usr/bin/env bash^M" - which reads like a missing bash.
+*.sh text eol=lf
+
+# PowerShell is fine with either, but keep CRLF so the files look native on Windows.
+# (Encoding matters more here: .ps1 must be ASCII + UTF-8 BOM. See CLAUDE.md.)
+*.ps1 text eol=crlf
+
+# .reg files are consumed by regedit on Windows.
+*.reg text eol=crlf
+
+# Patches must not be reflowed - git apply is whitespace-sensitive.
+*.patch -text
+*.diff -text
+
+# Markdown left to text=auto above.
+
+# Design deliverables - store verbatim, never reflow
+design/*.dc.html -text
+design/support.js -text
+design/preview.png -text

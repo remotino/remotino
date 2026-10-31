@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+:root{
+  --bg:#0b0d0f; --bg-2:#111417; --bg-3:#191d21;
+  --border:#20262b; --border-2:#2b3237;
+  --text:#dfe4e8; --text-dim:#98a2ab; --text-mute:#616b73;
+  --accent:#3fd07d; --rdp:#5aa2e0; --ok:#3fd07d; --warn:#e0a83f; --err:#e05d5d;
+  --sel:color-mix(in srgb, var(--accent) 13%, transparent);
+  --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,"Cascadia Code","Liberation Mono",monospace;
+  --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:#050607;font-family:var(--ui)}
+.rdp{color:var(--rdp);background:color-mix(in srgb,var(--rdp) 15%,transparent)}
+.ssh{color:var(--accent);background:var(--sel)}
+</style>
+</helmet>
+
+<div style="padding:40px;color:var(--text);font-family:var(--ui)">
+  <section>
+    <div style="max-width:1240px;margin:0 auto 22px">
+      <div style="font-size:19px;font-weight:700;letter-spacing:-.3px">Connections tree — 3 treatments</div>
+      <div style="color:var(--text-mute);font-size:13px;margin-top:4px">Same sample subtree in each, including the locked <span style="font-family:var(--mono)">Restricted</span> folder and status dots. All dark, all at real density. Reference an option in chat by its id.</div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start">
+
+      <!-- 1a -->
+      <div id="1a" style="width:380px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:#04120a;background:var(--accent);padding:2px 7px;border-radius:4px">1a</span>
+          <span style="font-size:14px;font-weight:600">Guided rails</span>
+          <span style="font-size:11.5px;color:var(--text-mute)">balanced default</span>
+        </div>
+        <div style="border:1px solid var(--border-2);border-radius:9px;overflow:hidden;background:var(--bg)">
+          <div style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;background:var(--bg-2);border-bottom:1px solid var(--border)">
+            <svg width="13" height="13" viewBox="0 0 16 16" style="opacity:.7"><circle cx="6.6" cy="6.6" r="4.4" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="9.8" y1="9.8" x2="13.4" y2="13.4" stroke="currentColor" stroke-width="1.6"/></svg>
+            <span style="font-family:var(--mono);font-size:12px;color:var(--text-mute)">Filter connections…</span>
+          </div>
+          <div style="padding:4px 0;font-size:13px">
+            <div style="display:flex;align-items:center;gap:7px;height:30px;padding:0 12px"><span style="width:10px;color:var(--text-mute);font-size:9px">▾</span><svg width="14" height="14" viewBox="0 0 16 16" style="color:var(--text-mute)"><path d="M2.4 6 H14 L12.7 12.6 H1.1 Z" fill="currentColor"/></svg><span style="font-weight:600">Production</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:10.5px;color:var(--text-mute);background:var(--bg-3);padding:1px 6px;border-radius:9px">240</span></div>
+            <div style="margin-left:22px;border-left:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:7px;height:30px;padding:0 12px"><span style="width:10px;color:var(--text-mute);font-size:9px">▾</span><svg width="14" height="14" viewBox="0 0 16 16" style="color:var(--text-mute)"><path d="M2.4 6 H14 L12.7 12.6 H1.1 Z" fill="currentColor"/></svg><span style="font-weight:600">Web Tier</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:10.5px;color:var(--text-mute);background:var(--bg-3);padding:1px 6px;border-radius:9px">18</span></div>
+              <div style="margin-left:22px;border-left:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;background:var(--sel);box-shadow:inset 2px 0 0 var(--accent)"><span style="width:29px;text-align:center;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;padding:1px 0" class="ssh">SSH</span><span>web-use1-01</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:11.5px;color:var(--text-dim)">…01.use1<span style="color:var(--text-mute)">:22</span></span><span style="width:7px;height:7px;border-radius:50%;background:var(--ok)"></span></div>
+                <div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 12px"><span style="width:29px;text-align:center;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;padding:1px 0" class="ssh">SSH</span><span>web-use1-02</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:11.5px;color:var(--text-dim)">…02.use1<span style="color:var(--text-mute)">:22</span></span><span style="width:7px;height:7px;border-radius:50%;background:var(--err)"></span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px;height:30px;padding:0 12px"><span style="width:10px;color:var(--text-mute);font-size:9px">▸</span><svg width="14" height="14" viewBox="0 0 16 16" style="color:var(--text-mute)"><path d="M2 4.4 H6.3 L7.7 5.9 H14 V12.6 H2 Z" fill="currentColor"/></svg><span style="font-weight:600">Database</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:10.5px;color:var(--text-mute);background:var(--bg-3);padding:1px 6px;border-radius:9px">12</span></div>
+              <div style="display:flex;align-items:center;gap:7px;height:30px;padding:0 12px"><span style="width:10px"></span><svg width="13" height="13" viewBox="0 0 16 16" style="color:var(--text-mute)"><rect x="3.2" y="7" width="9.6" height="6.3" rx="1.2" fill="currentColor"/><path d="M4.9 7 V5.3 A3.1 3.1 0 0 1 11.1 5.3 V7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span style="font-style:italic;color:var(--text-mute)">Restricted</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-mute);line-height:1.6;margin-top:10px">Indent rails trace hierarchy at deep nesting; count pills give scale at a glance. 30px rows. Most readable when trees go 5+ levels deep.</div>
+      </div>
+
+      <!-- 1b -->
+      <div id="1b" style="width:380px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:#04120a;background:var(--accent);padding:2px 7px;border-radius:4px">1b</span>
+          <span style="font-size:14px;font-weight:600">Hyperdense</span>
+          <span style="font-size:11.5px;color:var(--text-mute)">max rows on screen</span>
+        </div>
+        <div style="border:1px solid var(--border-2);border-radius:9px;overflow:hidden;background:var(--bg)">
+          <div style="display:flex;align-items:center;gap:7px;height:30px;padding:0 10px;background:var(--bg-2);border-bottom:1px solid var(--border)">
+            <svg width="12" height="12" viewBox="0 0 16 16" style="opacity:.7"><circle cx="6.6" cy="6.6" r="4.4" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="9.8" y1="9.8" x2="13.4" y2="13.4" stroke="currentColor" stroke-width="1.6"/></svg>
+            <span style="font-family:var(--mono);font-size:11.5px;color:var(--text-mute)">Filter…</span>
+          </div>
+          <div style="font-family:var(--mono);font-size:12px;padding:1px 0">
+            <div style="display:flex;align-items:center;gap:5px;height:22px;padding:0 9px"><span style="width:9px;color:var(--text-mute);font-size:8px">▾</span><span style="font-weight:700;color:var(--text)">Production</span><span style="color:var(--text-mute)">/240</span></div>
+            <div style="display:flex;align-items:center;gap:5px;height:22px;padding:0 9px 0 20px"><span style="width:9px;color:var(--text-mute);font-size:8px">▾</span><span style="font-weight:700;color:var(--text)">Web Tier</span><span style="color:var(--text-mute)">/18</span></div>
+            <div style="display:flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 33px;background:var(--sel);box-shadow:inset 2px 0 0 var(--accent)"><span class="ssh" style="font-size:8.5px;font-weight:700;padding:0 3px;border-radius:2px">SSH</span><span style="color:var(--text)">web-use1-01</span><span style="flex:1"></span><span style="color:var(--text-dim)">…use1:22</span><span style="width:6px;height:6px;border-radius:50%;background:var(--ok)"></span></div>
+            <div style="display:flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 33px;background:rgba(255,255,255,.018)"><span class="ssh" style="font-size:8.5px;font-weight:700;padding:0 3px;border-radius:2px">SSH</span><span style="color:var(--text)">web-use1-02</span><span style="flex:1"></span><span style="color:var(--text-dim)">…use1:22</span><span style="width:6px;height:6px;border-radius:50%;background:var(--err)"></span></div>
+            <div style="display:flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 33px"><span class="ssh" style="font-size:8.5px;font-weight:700;padding:0 3px;border-radius:2px">SSH</span><span style="color:var(--text)">web-use1-03</span><span style="flex:1"></span><span style="color:var(--text-dim)">…use1:22</span></div>
+            <div style="display:flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 33px;background:rgba(255,255,255,.018)"><span class="rdp" style="font-size:8.5px;font-weight:700;padding:0 3px;border-radius:2px">RDP</span><span style="color:var(--text)">ws-corp-04</span><span style="flex:1"></span><span style="color:var(--text-dim)">…corp:3389</span></div>
+            <div style="display:flex;align-items:center;gap:5px;height:22px;padding:0 9px 0 20px"><span style="width:9px;color:var(--text-mute);font-size:8px">▸</span><span style="font-weight:700;color:var(--text)">Database</span><span style="color:var(--text-mute)">/12</span></div>
+            <div style="display:flex;align-items:center;gap:5px;height:22px;padding:0 9px 0 20px"><span style="width:9px"></span><svg width="11" height="11" viewBox="0 0 16 16" style="color:var(--text-mute)"><rect x="3.2" y="7" width="9.6" height="6.3" rx="1.2" fill="currentColor"/><path d="M4.9 7 V5.3 A3.1 3.1 0 0 1 11.1 5.3 V7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span style="font-style:italic;color:var(--text-mute)">Restricted</span></div>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-mute);line-height:1.6;margin-top:10px">22px monospace rows, subtle zebra, no chrome. Fits ~40% more rows per screen than 1a. Best for the "I manage 500 servers and live in this list" user.</div>
+      </div>
+
+      <!-- 1c -->
+      <div id="1c" style="width:380px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:#04120a;background:var(--accent);padding:2px 7px;border-radius:4px">1c</span>
+          <span style="font-size:14px;font-weight:600">Grouped headers</span>
+          <span style="font-size:11.5px;color:var(--text-mute)">navigate at scale</span>
+        </div>
+        <div style="border:1px solid var(--border-2);border-radius:9px;overflow:hidden;background:var(--bg)">
+          <div style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;background:var(--bg-2);border-bottom:1px solid var(--border)">
+            <svg width="13" height="13" viewBox="0 0 16 16" style="opacity:.7"><circle cx="6.6" cy="6.6" r="4.4" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="9.8" y1="9.8" x2="13.4" y2="13.4" stroke="currentColor" stroke-width="1.6"/></svg>
+            <span style="font-family:var(--mono);font-size:12px;color:var(--text-mute)">Filter connections…</span>
+          </div>
+          <div style="font-size:13px">
+            <div style="display:flex;align-items:center;gap:6px;height:24px;padding:0 12px;background:var(--bg-2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-mute)"><span style="color:var(--text-dim)">Production</span><span>/ us-east-1 / Web Tier</span><span style="flex:1"></span><span>18</span></div>
+            <div style="display:flex;align-items:center;gap:8px;height:26px;padding:0 12px;background:var(--sel);box-shadow:inset 2px 0 0 var(--accent)"><span class="ssh" style="width:29px;text-align:center;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;padding:1px 0">SSH</span><span>web-use1-01</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">web-use1-01.use1<span style="color:var(--text-mute)">:22</span></span><span style="width:7px;height:7px;border-radius:50%;background:var(--ok)"></span></div>
+            <div style="display:flex;align-items:center;gap:8px;height:26px;padding:0 12px"><span class="ssh" style="width:29px;text-align:center;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;padding:1px 0">SSH</span><span>web-use1-02</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">web-use1-02.use1<span style="color:var(--text-mute)">:22</span></span><span style="width:7px;height:7px;border-radius:50%;background:var(--err)"></span></div>
+            <div style="display:flex;align-items:center;gap:6px;height:24px;padding:0 12px;background:var(--bg-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-mute)"><span style="color:var(--text-dim)">Production</span><span>/ us-east-1 / Database</span><span style="flex:1"></span><span>12</span></div>
+            <div style="display:flex;align-items:center;gap:8px;height:26px;padding:0 12px"><span class="ssh" style="width:29px;text-align:center;font-family:var(--mono);font-size:9px;font-weight:700;border-radius:2px;padding:1px 0">SSH</span><span>db-use1-04</span><span style="flex:1"></span><span style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">db-use1-04.use1<span style="color:var(--text-mute)">:22</span></span><span style="width:7px;height:7px;border-radius:50%;background:var(--ok)"></span></div>
+            <div style="display:flex;align-items:center;gap:6px;height:24px;padding:0 12px;background:var(--bg-2);border-top:1px solid var(--border);font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-mute)"><svg width="11" height="11" viewBox="0 0 16 16" style="color:var(--text-mute)"><rect x="3.2" y="7" width="9.6" height="6.3" rx="1.2" fill="currentColor"/><path d="M4.9 7 V5.3 A3.1 3.1 0 0 1 11.1 5.3 V7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span style="text-transform:none;font-style:italic">Restricted — no access</span></div>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-mute);line-height:1.6;margin-top:10px">Full folder path as a sticky group header, flat 26px connection rows beneath. Trades indent nesting for legible breadcrumbs — scans fastest when scrolling hundreds of rows.</div>
+      </div>
+
+    </div>
+  </section>
+</div>
+</x-dc>
+</body>
+</html>

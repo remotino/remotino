@@ -1,0 +1,149 @@
+diff --git a/crates/ironrdp-client/src/rdp.rs b/crates/ironrdp-client/src/rdp.rs
+index 0d44cb7..81ad772 100644
+--- a/crates/ironrdp-client/src/rdp.rs
++++ b/crates/ironrdp-client/src/rdp.rs
+@@ -736,6 +736,7 @@ async fn active_session(
+     // We retain the factory to drive the Deactivation-Reactivation Sequence locally.
+     let activation_factory = connection_result.activation_factory;
+ 
++
+     let mut active_stage = ActiveStageBuilder {
+         static_channels: connection_result.static_channels,
+         user_channel_id: connection_result.user_channel_id,
+@@ -978,6 +979,8 @@ async fn active_session(
+                         {
+                             debug!(?desktop_size, "Deactivation-Reactivation Sequence completed");
+                             image = DecodedImage::new(PixelFormat::RgbA32, desktop_size.width, desktop_size.height);
++                            // Must be taken BEFORE the processor is replaced below.
++                            let carried_decompressor = active_stage.take_bulk_decompressor();
+                             active_stage.set_fastpath_processor(
+                                 fast_path::ProcessorBuilder {
+                                     io_channel_id: connection_activation.io_channel_id(),
+@@ -985,7 +988,17 @@ async fn active_session(
+                                     share_id,
+                                     enable_server_pointer,
+                                     pointer_software_rendering,
+-                                    bulk_decompressor: None,
++                                    // Carry the LIVE decompressor across the reactivation.
++                                    //
++                                    // Two wrong answers were tried here first. `None` dropped
++                                    // decompression entirely while the client kept advertising
++                                    // compression, so the next compressed PDU was parsed as raw
++                                    // bytes and the session died on resize. Building a *fresh*
++                                    // decompressor was worse: MPPC/NCRUSH/XCRUSH keep a history
++                                    // window that must track the server's compressor, so an
++                                    // empty history turns every subsequent update into garbage.
++                                    // Only carrying the existing instance preserves that state.
++                                    bulk_decompressor: carried_decompressor,
+                                 }
+                                 .build(),
+                             );
+diff --git a/crates/ironrdp-session/src/active_stage.rs b/crates/ironrdp-session/src/active_stage.rs
+index f1b712e..695ce29 100644
+--- a/crates/ironrdp-session/src/active_stage.rs
++++ b/crates/ironrdp-session/src/active_stage.rs
+@@ -30,6 +30,29 @@ fn to_bulk_compression_type(ct: PduCompressionType) -> ironrdp_bulk::Compression
+     }
+ }
+ 
++/// Builds a bulk decompressor for the negotiated compression type, if any.
++///
++/// Exposed publicly because the FastPath processor must be rebuilt after a
++/// Deactivation-Reactivation Sequence (a window resize triggers one). Callers that
++/// rebuild it need to restore the decompressor too - dropping it leaves the client
++/// advertising compression it can no longer decode, and the next compressed PDU is
++/// parsed as raw bytes.
++pub fn make_bulk_decompressor(compression_type: Option<PduCompressionType>) -> Option<BulkCompressor> {
++    compression_type.and_then(|ct| {
++        let bulk_ct = to_bulk_compression_type(ct);
++        match BulkCompressor::new(bulk_ct) {
++            Ok(compressor) => {
++                info!(compression_type = %bulk_ct, "Bulk decompressor initialized for FastPath");
++                Some(compressor)
++            }
++            Err(e) => {
++                tracing::error!(error = %e, "Failed to create bulk decompressor, compression disabled");
++                None
++            }
++        }
++    })
++}
++
+ pub struct ActiveStage {
+     x224_processor: x224::Processor,
+     fast_path_processor: fast_path::Processor,
+@@ -76,19 +99,7 @@ impl ActiveStageBuilder {
+         );
+ 
+         // Create bulk decompressor if compression was negotiated
+-        let bulk_decompressor = compression_type.and_then(|ct| {
+-            let bulk_ct = to_bulk_compression_type(ct);
+-            match BulkCompressor::new(bulk_ct) {
+-                Ok(compressor) => {
+-                    info!(compression_type = %bulk_ct, "Bulk decompressor initialized for FastPath");
+-                    Some(compressor)
+-                }
+-                Err(e) => {
+-                    tracing::error!(error = %e, "Failed to create bulk decompressor, compression disabled");
+-                    None
+-                }
+-            }
+-        });
++        let bulk_decompressor = make_bulk_decompressor(compression_type);
+ 
+         let fast_path_processor = fast_path::ProcessorBuilder {
+             io_channel_id,
+@@ -225,6 +236,13 @@ impl ActiveStage {
+         Ok(stage_outputs)
+     }
+ 
++    /// Removes the live bulk decompressor, for carrying across a reactivation.
++    ///
++    /// See [`fast_path::Processor::take_bulk_decompressor`] for why rebuilding one is wrong.
++    pub fn take_bulk_decompressor(&mut self) -> Option<BulkCompressor> {
++        self.fast_path_processor.take_bulk_decompressor()
++    }
++
+     pub fn set_fastpath_processor(&mut self, processor: fast_path::Processor) {
+         self.fast_path_processor = processor;
+     }
+diff --git a/crates/ironrdp-session/src/fast_path.rs b/crates/ironrdp-session/src/fast_path.rs
+index 9c48c7b..47199cf 100644
+--- a/crates/ironrdp-session/src/fast_path.rs
++++ b/crates/ironrdp-session/src/fast_path.rs
+@@ -588,6 +588,20 @@ fn qoi_apply(
+     Ok(())
+ }
+ 
++impl Processor {
++    /// Removes the bulk decompressor so it can be carried into a rebuilt processor.
++    ///
++    /// Bulk decompression is **stateful**: MPPC/NCRUSH/XCRUSH keep a history window that
++    /// must stay in lockstep with the server's compressor. A Deactivation-Reactivation
++    /// Sequence rebuilds this processor, and constructing a *fresh* decompressor there
++    /// resets the history to empty while the server keeps its own - every subsequent
++    /// decompression then yields garbage (invalid update types, absurd bytes-per-pixel,
++    /// wrong pointer mask sizes). Carry the existing instance over instead.
++    pub fn take_bulk_decompressor(&mut self) -> Option<BulkCompressor> {
++        self.bulk_decompressor.take()
++    }
++}
++
+ pub struct ProcessorBuilder {
+     pub io_channel_id: u16,
+     pub user_channel_id: u16,
+diff --git a/crates/ironrdp-session/src/lib.rs b/crates/ironrdp-session/src/lib.rs
+index 4d45fad..25ec471 100644
+--- a/crates/ironrdp-session/src/lib.rs
++++ b/crates/ironrdp-session/src/lib.rs
+@@ -15,7 +15,9 @@ mod palette;
+ 
+ use core::fmt;
+ 
+-pub use active_stage::{ActiveStage, ActiveStageBuilder, ActiveStageOutput, GracefulDisconnectReason};
++pub use active_stage::{
++    ActiveStage, ActiveStageBuilder, ActiveStageOutput, GracefulDisconnectReason, make_bulk_decompressor,
++};
+ 
+ pub type SessionResult<T> = Result<T, SessionError>;
+ 

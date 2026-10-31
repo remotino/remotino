@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Remotino — encrypted RDP/SSH connection manager</title>
+<meta name="description" content="A zero-trust, client-side-encrypted RDP & SSH connection manager for Windows & macOS. The server never holds your secrets in the clear." />
+<style>
+  :root {
+    --bg: #f2f5f2;
+    --bg-2: #ffffff;
+    --bg-3: #eaefea;
+    --ink: #0f1f18;
+    --ink-2: #3b4a44;
+    --ink-3: #6a7a72;
+    --line: #dde3de;
+    --line-2: #cdd5cf;
+    --accent: #0f9e58;
+    --accent-ink: #ffffff;
+    --ssh: #0b8f9c;
+    --rdp: #b0730d;
+    --glow: transparent;
+    --shadow: 0 24px 60px rgba(16, 34, 26, 0.10);
+    --shadow-sm: 0 2px 14px rgba(16, 34, 26, 0.06);
+
+    --m-bg: #0b1014;
+    --m-panel: #10171c;
+    --m-panel-2: #0e1519;
+    --m-line: #1e2a26;
+    --m-ink: #e7eee9;
+    --m-dim: #97a49b;
+    --m-mute: #5f6d65;
+    --m-green: #35e08b;
+    --m-ssh: #52d6e2;
+    --m-rdp: #f3b64e;
+    --m-sel: #16211d;
+
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0f13;
+      --bg-2: #111a1f;
+      --bg-3: #0e161b;
+      --ink: #e9f0ea;
+      --ink-2: #aab7af;
+      --ink-3: #6f7d75;
+      --line: #1d2a2f;
+      --line-2: #26353b;
+      --accent: #35e08b;
+      --accent-ink: #04130b;
+      --ssh: #52d6e2;
+      --rdp: #f3b64e;
+      --glow: rgba(53, 224, 139, 0.10);
+      --shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+      --shadow-sm: 0 2px 16px rgba(0, 0, 0, 0.35);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(120% 70% at 50% -8%, var(--glow), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .wrap { width: min(1120px, 92%); margin-inline: auto; }
+
+  h1, h2, h3 { font-family: var(--mono); font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+  p { margin: 0; }
+  a { color: inherit; }
+
+  nav.top {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-in { display: flex; align-items: center; gap: 22px; height: 58px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-weight: 600; letter-spacing: -0.01em; font-size: 1.02rem; }
+  .brand .mark { color: var(--accent); font-weight: 700; }
+  .brand .cursor { display: inline-block; width: 0.5ch; background: var(--accent); color: transparent; animation: blink 1.15s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .nav-links { display: flex; gap: 22px; margin-left: auto; align-items: center; }
+  .nav-links a { font-size: 0.9rem; color: var(--ink-2); text-decoration: none; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-ghost {
+    font-family: var(--mono); font-size: 0.82rem; text-decoration: none;
+    color: var(--ink); border: 1px solid var(--line-2); border-radius: 8px;
+    padding: 7px 13px;
+  }
+  .nav-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  @media (max-width: 720px) { .nav-links a:not(.nav-ghost) { display: none; } }
+
+  .hero { padding: clamp(48px, 8vw, 96px) 0 clamp(40px, 6vw, 72px); }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(30px, 5vw, 64px); align-items: center; }
+  @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
+  h1.title { font-size: clamp(2.1rem, 5.4vw, 3.5rem); line-height: 1.04; margin-top: 16px; }
+  h1.title .hl { color: var(--accent); }
+  .lede { color: var(--ink-2); font-size: clamp(1.02rem, 1.6vw, 1.18rem); max-width: 34ch; margin-top: 18px; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .btn {
+    font-family: var(--mono); font-size: 0.9rem; text-decoration: none;
+    border-radius: 9px; padding: 11px 18px; display: inline-flex; align-items: center; gap: 9px;
+    transition: transform 0.12s ease, filter 0.12s ease, border-color 0.12s ease;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  .btn-ghost { border: 1px solid var(--line-2); color: var(--ink); background: var(--bg-2); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .assur { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 26px; font-family: var(--mono); font-size: 0.76rem; color: var(--ink-3); }
+  .assur span { display: inline-flex; align-items: center; gap: 6px; }
+  .assur .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+  .frame {
+    background: var(--m-bg);
+    border: 1px solid var(--m-line);
+    border-radius: 13px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    font-family: var(--sans);
+    color: var(--m-ink);
+  }
+  .frame.tilt { transform: perspective(1400px) rotateY(-4deg) rotateX(1.5deg); }
+  @media (max-width: 900px) { .frame.tilt { transform: none; } }
+  .m-tabs { display: flex; align-items: stretch; height: 32px; background: #070c0f; border-bottom: 1px solid var(--m-line); padding: 0 5px; gap: 2px; font-size: 12px; }
+  .m-tab { display: flex; align-items: center; gap: 6px; padding: 0 11px; color: var(--m-dim); border-top: 2px solid transparent; white-space: nowrap; }
+  .m-tab.active { color: var(--m-ink); background: var(--m-bg); border-top-color: var(--m-green); }
+  .m-tab .sdot { width: 6px; height: 6px; border-radius: 50%; }
+  .sdot.ok { background: var(--m-green); }
+  .sdot.idle { background: var(--m-mute); }
+  .m-badge { font-family: var(--mono); font-size: 8.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px; }
+  .m-badge.ssh { color: var(--m-ssh); background: color-mix(in srgb, var(--m-ssh) 16%, transparent); }
+  .m-badge.rdp { color: var(--m-rdp); background: color-mix(in srgb, var(--m-rdp) 16%, transparent); }
+  .m-x { margin-left: 4px; color: var(--m-mute); }
+
+  .m-search { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-bottom: 1px solid var(--m-line); color: var(--m-dim); font-size: 12.5px; }
+  .m-search .grow { flex: 1; }
+  .m-chip { font-family: var(--mono); font-size: 10px; color: var(--m-mute); border: 1px solid var(--m-line); border-radius: 5px; padding: 2px 6px; }
+  .m-plus { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid var(--m-line); border-radius: 5px; color: var(--m-dim); }
+
+  .m-vault { border-bottom: 1px solid var(--m-line); padding: 8px 0 6px; }
+  .m-vhead { display: flex; align-items: center; gap: 8px; padding: 2px 12px 6px; }
+  .m-vhead .vico { color: var(--m-rdp); }
+  .m-vtitle { font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--m-dim); font-weight: 600; }
+  .m-count { font-family: var(--mono); font-size: 10px; color: var(--m-mute); }
+
+  .m-row { display: flex; align-items: center; gap: 8px; height: 27px; padding: 0 12px; font-size: 12.5px; }
+  .m-name { color: var(--m-ink); }
+  .m-meta { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--m-dim); }
+  .m-meta .port { color: var(--m-mute); }
+  .m-key { color: var(--m-rdp); font-size: 11px; }
+  .tag-shared { font-family: var(--mono); font-size: 8.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; color: var(--m-green); background: color-mix(in srgb, var(--m-green) 15%, transparent); border: 1px solid color-mix(in srgb, var(--m-green) 32%, transparent); }
+  .m-tree { padding: 5px 0 9px; }
+  .m-fold { display: flex; align-items: center; gap: 7px; height: 27px; padding: 0 12px; font-size: 12.5px; }
+  .chev { color: var(--m-mute); font-size: 9px; }
+  .fico { color: var(--m-rdp); }
+  .fname { font-weight: 500; }
+  .fcount { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--m-mute); }
+  .indent-1 { padding-left: 26px; }
+  .indent-2 { padding-left: 40px; }
+  .restricted { color: var(--m-mute); font-style: italic; }
+  .lock { color: var(--m-mute); }
+
+  section { padding: clamp(48px, 7vw, 88px) 0; }
+  .sec-head { max-width: 52ch; }
+  .sec-head h2 { font-size: clamp(1.5rem, 3vw, 2.15rem); line-height: 1.12; margin-top: 12px; }
+  .sec-head .sub { color: var(--ink-2); margin-top: 14px; font-size: 1.02rem; }
+
+  .pillars { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 40px; }
+  @media (max-width: 760px) { .pillars { grid-template-columns: 1fr; } }
+  .pillar { background: var(--bg-2); border: 1px solid var(--line); border-radius: 13px; padding: 24px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+  .pillar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--accent); opacity: 0.85; }
+  .pillar.lead { grid-column: 1 / -1; background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 8%, var(--bg-2)), var(--bg-2) 60%); }
+  .pillar h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .pillar.lead h3 { font-size: clamp(1.2rem, 2.2vw, 1.5rem); }
+  .pillar p { color: var(--ink-2); font-size: 0.96rem; }
+  .pillar .k { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; display: block; }
+
+  .feat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 40px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  @media (max-width: 900px) { .feat-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .feat-grid { grid-template-columns: 1fr; } }
+  .feat { background: var(--bg-2); padding: 22px 20px; }
+  .feat .ico { width: 30px; height: 30px; color: var(--accent); margin-bottom: 12px; }
+  .feat h3 { font-size: 0.98rem; font-family: var(--mono); letter-spacing: -0.01em; margin-bottom: 6px; }
+  .feat p { color: var(--ink-3); font-size: 0.86rem; line-height: 1.5; }
+
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 40px; align-items: start; }
+  @media (max-width: 820px) { .shots { grid-template-columns: 1fr; } }
+  .shot .cap { display: block; margin-top: 12px; font-size: 0.9rem; color: var(--ink-2); }
+  .shot .cap b { color: var(--ink); font-weight: 600; font-family: var(--mono); }
+
+  .m-session { height: 240px; background: radial-gradient(140% 120% at 50% 0%, #0f171c, #070b0e); display: grid; place-items: center; position: relative; }
+  .m-session .os {
+    width: 78%; height: 66%;
+    background: linear-gradient(160deg, #123, #0b2233 60%, #0e2a1f);
+    border-radius: 6px; border: 1px solid #24424f;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.4);
+    display: flex; align-items: flex-end; padding: 10px; gap: 8px;
+  }
+  /* The real app's resize badge: host + resolution, green on black, flashed bottom-right when
+     the desktop resizes. Shown here as a snapshot of the "live resize" the caption describes. */
+  .m-session .m-res { position: absolute; right: 13%; bottom: 21%; font-family: var(--mono); font-size: 10px; color: var(--m-green); background: #000; border: 1px solid color-mix(in srgb, var(--m-green) 40%, transparent); border-radius: 5px; padding: 3px 7px; }
+  .m-cad { position: absolute; top: 10px; right: 12px; font-family: var(--mono); font-size: 10px; color: var(--m-dim); border: 1px solid var(--m-line); border-radius: 5px; padding: 3px 7px; background: rgba(0,0,0,0.35); }
+
+  .m-modal { padding: 18px; }
+  .m-modal .mt { font-family: var(--mono); font-size: 13px; margin-bottom: 4px; }
+  .m-modal .mh { font-size: 11.5px; color: var(--m-dim); line-height: 1.45; margin-bottom: 14px; }
+  .m-user { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--m-line); border-radius: 7px; margin-bottom: 6px; font-size: 12.5px; }
+  .m-user.on { border-color: color-mix(in srgb, var(--m-green) 45%, transparent); }
+  .m-check { width: 12px; color: var(--m-green); }
+  .m-user .fp { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--m-mute); }
+  .m-code { margin-top: 12px; font-family: var(--mono); font-size: 10px; line-height: 1.5; color: var(--m-dim); background: var(--m-panel-2); border: 1px solid var(--m-line); border-radius: 7px; padding: 9px 11px; word-break: break-all; }
+
+  .spec { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(28px, 5vw, 56px); margin-top: 40px; align-items: start; }
+  @media (max-width: 820px) { .spec { grid-template-columns: 1fr; } }
+  .spec-list { display: flex; flex-direction: column; }
+  .spec-item { display: grid; grid-template-columns: 130px 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); }
+  .spec-item:first-child { border-top: 0; }
+  .spec-item dt { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); }
+  .spec-item dd { margin: 0; color: var(--ink); font-size: 0.94rem; }
+  .spec-item dd .algo { font-family: var(--mono); color: var(--accent); font-size: 0.88rem; }
+  .spec-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 13px; padding: 22px; box-shadow: var(--shadow-sm); }
+  .spec-card h3 { font-size: 1rem; margin-bottom: 10px; }
+  .spec-card p { color: var(--ink-2); font-size: 0.92rem; }
+  .spec-card .chainrow { display: flex; align-items: center; gap: 6px; margin-top: 16px; font-family: var(--mono); font-size: 0.7rem; color: var(--ink-3); flex-wrap: wrap; }
+  .chip-blk { border: 1px solid var(--line-2); border-radius: 6px; padding: 5px 8px; display: flex; flex-direction: column; gap: 2px; background: var(--bg-3); }
+  .chip-blk b { color: var(--accent); font-size: 0.72rem; }
+  .chain-arrow { color: var(--ink-3); }
+
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
+  @media (max-width: 720px) { .cmp { grid-template-columns: 1fr; } }
+  .cmp-card { border: 1px solid var(--line); border-radius: 13px; padding: 24px; background: var(--bg-2); }
+  .cmp-card h3 { font-size: 1.05rem; margin-bottom: 4px; }
+  .cmp-card .vs { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .cmp-card ul { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-direction: column; gap: 9px; }
+  .cmp-card li { display: flex; gap: 10px; font-size: 0.92rem; color: var(--ink-2); }
+  .cmp-card li .m { color: var(--accent); flex: 0 0 auto; font-family: var(--mono); }
+
+  .note { margin-top: 34px; padding: 16px 18px; border: 1px dashed var(--line-2); border-radius: 11px; background: var(--bg-3); font-size: 0.88rem; color: var(--ink-2); display: flex; gap: 12px; }
+  .note b { color: var(--ink); }
+
+  footer { border-top: 1px solid var(--line); padding: 46px 0 60px; margin-top: 20px; }
+  .foot-grid { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; justify-content: space-between; }
+  .foot-brand { max-width: 34ch; }
+  .foot-brand p { color: var(--ink-3); font-size: 0.9rem; margin-top: 10px; }
+  .stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .stack span { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: var(--bg-2); }
+  .foot-cta { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .foot-contact { font-family: var(--mono); font-size: 0.82rem; color: var(--ink-2); }
+  .foot-contact a { color: var(--accent); text-decoration: none; }
+  .foot-contact a:hover { text-decoration: underline; }
+  .foot-meta { margin-top: 30px; font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); }
+
+  :where(a, button):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+  .reveal { opacity: 0; transform: translateY(14px); animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+  .d1 { animation-delay: 0.05s; } .d2 { animation-delay: 0.14s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity: 1; transform: none; }
+    .brand .cursor { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-in">
+    <div class="brand"><span class="mark">&rsaquo;_</span> remotino<span class="cursor">.</span></div>
+    <div class="nav-links">
+      <a href="#why">Why</a>
+      <a href="#features">Features</a>
+      <a href="#security">Security</a>
+      <a href="/docs">Docs</a>
+      <a class="email" data-e="68656c6c6f4072656d6f74696e6f2e617070">Contact</a>
+      <a class="nav-ghost" href="https://github.com/remotino/remotino">GitHub&nbsp;&#8599;</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div class="reveal d1">
+      <p class="eyebrow">RDP &middot; SSH &middot; zero-trust storage</p>
+      <h1 class="title">The connection manager that <span class="hl">can&rsquo;t leak your secrets.</span></h1>
+      <p class="lede">A fast, encrypted RDP &amp; SSH manager where the server never holds a password in the clear &mdash; access is enforced by keys, not by rules a database could be tricked into ignoring.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/remotino/remotino">&rsaquo;_ &nbsp;Get Remotino</a>
+        <a class="btn btn-ghost" href="#why">See why it&rsquo;s different</a>
+      </div>
+      <div class="assur">
+        <span><i class="dot"></i>Windows &amp; macOS, native</span>
+        <span><i class="dot"></i>Open source</span>
+        <span><i class="dot"></i>No shared vault password</span>
+      </div>
+    </div>
+
+    <div class="reveal d2">
+      <div class="frame tilt" role="img" aria-label="Remotino connection tree with a credential vault, folders, and SSH/RDP connections">
+        <div class="m-tabs">
+          <div class="m-tab active"><i class="sdot idle"></i>Connections</div>
+          <div class="m-tab"><i class="sdot ok"></i><span class="m-badge rdp">RDP</span>dc-01<span class="m-x">&times;</span></div>
+          <div class="m-tab"><i class="sdot ok"></i><span class="m-badge ssh">SSH</span>db-prod-01<span class="m-x">&times;</span></div>
+        </div>
+        <div class="m-search">
+          <span aria-hidden="true">&#9906;</span>
+          <span class="grow">Filter connections&hellip;</span>
+          <span class="m-chip">&#8984;K</span>
+          <span class="m-plus">+</span>
+        </div>
+        <div class="m-vault">
+          <div class="m-vhead">
+            <span class="vico" aria-hidden="true">&#128273;</span>
+            <span class="m-vtitle">Credentials</span>
+            <span class="m-count">3</span>
+          </div>
+          <div class="m-row"><span class="m-badge rdp">RDP</span><span class="m-name">prod-admin</span><span class="tag-shared">shared</span><span class="m-meta">CORP\administrator</span></div>
+          <div class="m-row"><span class="m-badge ssh">SSH</span><span class="m-name">linux-root</span><span class="m-meta">root</span></div>
+          <div class="m-row"><span class="m-badge ssh">SSH</span><span class="m-key" aria-hidden="true">&#128273;</span><span class="m-name">deploy key</span><span class="m-meta">7Xm9Qp2kLz8v&hellip;</span></div>
+        </div>
+        <div class="m-tree">
+          <div class="m-fold"><span class="chev">&#9662;</span><span class="fico" aria-hidden="true">&#128193;</span><span class="fname">Production</span><span class="tag-shared">shared</span></div>
+          <div class="m-fold indent-1"><span class="chev">&#9662;</span><span class="fico" aria-hidden="true">&#128193;</span><span class="fname">Databases</span><span class="fcount">3</span></div>
+          <div class="m-row indent-2"><span class="m-badge ssh">SSH</span><span class="m-name">db-prod-01</span><span class="m-meta">db-prod-01.use1.internal<span class="port">:22</span></span></div>
+          <div class="m-row indent-2"><span class="m-badge rdp">RDP</span><span class="m-name">db-admin-jump</span><span class="m-meta">10.20.4.11<span class="port">:3389</span></span></div>
+          <div class="m-fold indent-1"><span class="chev">&#9656;</span><span class="fico" aria-hidden="true">&#128193;</span><span class="fname">Web tier</span><span class="fcount">3</span></div>
+          <div class="m-fold"><span class="chev">&#9662;</span><span class="fico" aria-hidden="true">&#128193;</span><span class="fname">Infrastructure</span><span class="fcount">2</span></div>
+          <div class="m-row indent-1"><span class="m-badge rdp">RDP</span><span class="m-name">dc-01</span><span class="m-meta">10.0.1.10<span class="port">:3389</span></span></div>
+          <div class="m-fold"><span class="chev lock">&middot;</span><span class="lock" aria-hidden="true">&#128274;</span><span class="fname restricted">Restricted</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="why">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Why it&rsquo;s different</p>
+      <h2>Most vaults protect your secrets with a promise. Remotino protects them with math.</h2>
+      <p class="sub">The usual model is a trusted server that can decrypt everything &mdash; one break and every credential is readable. Remotino inverts that: the store is untrusted, and permission is a property of the keys, not a setting.</p>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar lead">
+        <span class="k">Zero-trust storage</span>
+        <h3>The database only ever sees ciphertext.</h3>
+        <p>Every folder and credential is sealed on your machine before it leaves. Sharing means wrapping a content key to a teammate&rsquo;s public key &mdash; so &ldquo;who can read this&rdquo; isn&rsquo;t an access-control list the server enforces, it&rsquo;s who mathematically holds the key. Compromise the database and you get encrypted blobs, not passwords.</p>
+      </div>
+      <div class="pillar">
+        <span class="k">Embedded, not a launcher</span>
+        <h3>Your password never leaves the process you trust.</h3>
+        <p>RDP and SSH render inside the app. The credential is unsealed in memory and used to authenticate &mdash; it&rsquo;s never handed to an external client you don&rsquo;t control.</p>
+      </div>
+      <div class="pillar">
+        <span class="k">Tamper-evident</span>
+        <h3>An audit log that can&rsquo;t be quietly rewritten.</h3>
+        <p>Every change is a signed link in an append-only hash chain, and the database itself denies UPDATE and DELETE. Rewriting history isn&rsquo;t against the rules &mdash; it&rsquo;s cryptographically detectable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Everything in one place</p>
+      <h2>A daily driver first, a security tool underneath.</h2>
+      <p class="sub">Built to replace a connection manager that crawls at a hundred entries &mdash; fast tree, instant filter, command palette &mdash; without asking you to think about the crypto holding it together.</p>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/></svg>
+        <h3>RDP + SSH, unified</h3>
+        <p>Embedded remote desktops and live terminals in one tabbed window. Dynamic resize, remote cursor, Ctrl+Alt+Del, clipboard.</p>
+      </div>
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="9" r="4"/><path d="M11 12l8 8M17 18l2-2M19 20l1.5-1.5"/></svg>
+        <h3>Credential vault</h3>
+        <p>Passwords and SSH keys, each sealed under its own key. Auto-fills on connect &mdash; the secret never touches the UI.</p>
+      </div>
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="17" r="2.6"/><path d="M9 9l6 6M17 5v.01M5 19v.01"/></svg>
+        <h3>Share by public key</h3>
+        <p>Grant a folder or a single credential to a teammate. Revoke it again. Access follows the keys, not a toggle.</p>
+      </div>
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7c0-1.5 3.6-3 8-3s8 1.5 8 3-3.6 3-8 3-8-1.5-8-3z"/><path d="M4 7v10c0 1.5 3.6 3 8 3s8-1.5 8-3V7"/></svg>
+        <h3>Flexible backends</h3>
+        <p>Solo on a local encrypted store, or a shared append-only repository on <strong>MSSQL Server</strong> or <strong>PostgreSQL</strong>. Each user gets a least-privilege login &mdash; SELECT/INSERT only &mdash; so the log stays server-enforced.</p>
+      </div>
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
+        <h3>Set up in the app</h3>
+        <p>Initialize the database and provision users from the GUI &mdash; no SSMS or psql. Each user&rsquo;s password is a &ldquo;setup code&rdquo; safe to send over chat, and the server&rsquo;s TLS certificate is pinned on first use.</p>
+      </div>
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg>
+        <h3>Command palette</h3>
+        <p>&#8984;K to jump to any host. A tree that filters instantly and drag-drops to reorganize, even at thousands of entries.</p>
+      </div>
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="1.5"/><path d="M3 8h18M6.5 6h.01M9 6h.01"/></svg>
+        <h3>Windows &amp; macOS</h3>
+        <p>Native on both, one small binary each, the same embedded RDP engine. Plus an SSH-only terminal client.</p>
+      </div>
+      <div class="feat">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3"/></svg>
+        <h3>Modern crypto only</h3>
+        <p>Ed25519, X25519, XChaCha20-Poly1305, Argon2id. No RSA, no shared application login, nothing to extract from a config file.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">A look inside</p>
+      <h2>It gets out of your way, then locks the door behind you.</h2>
+    </div>
+    <div class="shots">
+      <div class="shot reveal d1">
+        <div class="frame" role="img" aria-label="An embedded RDP session in a tab, connected to a Windows desktop">
+          <div class="m-tabs">
+            <div class="m-tab"><i class="sdot idle"></i>Connections</div>
+            <div class="m-tab active"><i class="sdot ok"></i><span class="m-badge rdp">RDP</span>dc-01<span class="m-x">&times;</span></div>
+          </div>
+          <div class="m-session">
+            <div class="m-cad">Ctrl+Alt+Del</div>
+            <div class="os"></div>
+            <div class="m-res">dc-01 &middot; 1600&times;900</div>
+          </div>
+        </div>
+        <span class="cap"><b>Embedded RDP.</b> A real desktop in a tab &mdash; connected hands-free from a linked credential, with clipboard and live resize.</span>
+      </div>
+
+      <div class="shot reveal d2">
+        <div class="frame" role="img" aria-label="The share dialog granting a credential to a teammate, and a setup code">
+          <div class="m-tabs"><div class="m-tab active"><i class="sdot idle"></i>Share &ldquo;prod-admin&rdquo;</div></div>
+          <div class="m-modal">
+            <div class="mt">Share &ldquo;prod-admin&rdquo;</div>
+            <div class="mh">Granting wraps this credential&rsquo;s key to the user, so they can use it to connect. Revoking is forward-only.</div>
+            <div class="m-user on"><span class="m-check">&#10003;</span><span>Alice</span><span class="fp">a3f1 9c22 7b04 e8d5</span></div>
+            <div class="m-user"><span class="m-check"></span><span>Bob</span><span class="fp">be22 04c1 77af 9d31</span></div>
+            <div class="m-code">setup code &rarr; eyJob3N0IjoiZGItc3J2LmNvcnAiLCJsb2dpbiI6InJlbW90aW5vX2FsaWNlIiwic2VhbGVkIjoiN2Y2YuKApiJ9<br><span style="color:var(--m-green)">safe to send over chat &mdash; only Alice&rsquo;s key can open it.</span></div>
+          </div>
+        </div>
+        <span class="cap"><b>Sharing that&rsquo;s cryptographic.</b> Grant a credential to a teammate&rsquo;s key; hand them a login as a code no interceptor can read.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="security">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Under the hood</p>
+      <h2>The security is the architecture, not a feature bolted on.</h2>
+      <p class="sub">Nothing here trusts the storage layer. The primitives are boring, modern, and named on purpose.</p>
+    </div>
+
+    <div class="spec">
+      <dl class="spec-list">
+        <div class="spec-item"><dt>Identity</dt><dd>An <span class="algo">Ed25519</span> signing key + <span class="algo">X25519</span> wrapping key, sealed at rest with <span class="algo">Argon2id</span>. Unlocked by your passphrase &mdash; never stored, never sent.</dd></div>
+        <div class="spec-item"><dt>Content</dt><dd>Folder names and connections sealed with <span class="algo">XChaCha20-Poly1305</span> under per-folder and per-credential keys.</dd></div>
+        <div class="spec-item"><dt>Sharing</dt><dd>Content keys wrapped to a recipient&rsquo;s public key (ECIES). Only the holder of the private half can unwrap &mdash; and it never leaves their machine.</dd></div>
+        <div class="spec-item"><dt>Audit</dt><dd>A signed hash chain. Append-only is <span class="algo">server-enforced</span> &mdash; the database denies UPDATE and DELETE on the log.</dd></div>
+        <div class="spec-item"><dt>Backend</dt><dd>MSSQL Server or PostgreSQL holds opaque bytes and per-user least-privilege logins, over pinned TLS. It is treated as untrusted storage, not a trusted authority.</dd></div>
+      </dl>
+
+      <div class="spec-card">
+        <h3>Why append-only matters</h3>
+        <p>Each entry signs the hash of the one before it. Change any past record and every later link stops verifying &mdash; and because the database itself refuses to rewrite rows, tampering isn&rsquo;t just detectable, it&rsquo;s blocked at the source.</p>
+        <div class="chainrow" aria-hidden="true">
+          <div class="chip-blk"><b>#41</b><span>signed</span></div>
+          <span class="chain-arrow">&rarr;</span>
+          <div class="chip-blk"><b>#42</b><span>links #41</span></div>
+          <span class="chain-arrow">&rarr;</span>
+          <div class="chip-blk"><b>#43</b><span>links #42</span></div>
+          <span class="chain-arrow">&rarr;</span>
+          <div class="chip-blk"><b>&hellip;</b><span>append only</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <span aria-hidden="true">&#9888;</span>
+      <span><b>Straight with you:</b> Remotino is pre-1.0 and open source. The cryptographic core is designed for an independent review, which is a gate before a 1.0 &mdash; not a claim it&rsquo;s already been certified. Read the code; that&rsquo;s the point of it being open.</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Where it fits</p>
+      <h2>Lighter than a PAM. Safer than your current manager.</h2>
+    </div>
+    <div class="cmp">
+      <div class="cmp-card">
+        <span class="vs">vs. a classic connection manager</span>
+        <h3>Fast, and it doesn&rsquo;t trust its own store.</h3>
+        <ul>
+          <li><span class="m">+</span><span>Stays fast at thousands of entries &mdash; instant filter, no lag.</span></li>
+          <li><span class="m">+</span><span>Secrets are client-side encrypted, not decryptable by the server.</span></li>
+          <li><span class="m">+</span><span>Sharing is by key, with a tamper-evident record of every grant.</span></li>
+        </ul>
+      </div>
+      <div class="cmp-card">
+        <span class="vs">vs. a heavyweight PAM</span>
+        <h3>Stronger custody, a fraction of the weight.</h3>
+        <ul>
+          <li><span class="m">+</span><span>No central vault that can decrypt everything &mdash; nothing to breach at once.</span></li>
+          <li><span class="m">+</span><span>Deploys as a small app on one MSSQL Server or Postgres, not a platform.</span></li>
+          <li><span class="m">&sim;</span><span>Focused on custody &amp; access &mdash; session recording and rotation are on the roadmap.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div class="brand"><span class="mark">&rsaquo;_</span> remotino</div>
+        <p>An open-source, cryptographically-enforced RDP &amp; SSH manager. Your secrets stay yours &mdash; even from the server that stores them.</p>
+        <div class="stack">
+          <span>Rust</span><span>Tauri</span><span>IronRDP</span><span>russh</span><span>MSSQL</span><span>PostgreSQL</span><span>Ed25519</span><span>XChaCha20</span>
+        </div>
+      </div>
+      <div class="foot-cta">
+        <a class="btn btn-primary" href="https://github.com/remotino/remotino">&rsaquo;_ &nbsp;View on GitHub</a>
+        <a class="btn btn-ghost" href="#why">Read how it works</a>
+        <p class="foot-contact">Get in touch: <a class="email" data-show data-e="68656c6c6f4072656d6f74696e6f2e617070">email&nbsp;us</a></p>
+      </div>
+    </div>
+    <p class="foot-meta">Remotino &middot; Windows &amp; macOS &middot; Security: <a class="email" data-show data-e="73656375726974794072656d6f74696e6f2e617070" style="color:inherit">email&nbsp;us</a></p>
+  </div>
+</footer>
+
+<script>
+  // Assemble mailto links from hex on the client so the addresses aren't in the page source
+  // for scrapers (Cloudflare Scrape Shield doesn't rewrite Worker-served HTML). data-show
+  // links reveal the address as their text; others keep their label and just get the href.
+  (function () {
+    function decode(hex) {
+      var s = "";
+      for (var i = 0; i < hex.length; i += 2) s += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+      return s;
+    }
+    var links = document.querySelectorAll("a.email");
+    for (var i = 0; i < links.length; i++) {
+      var a = links[i], addr = decode(a.getAttribute("data-e"));
+      a.setAttribute("href", "mailto:" + addr);
+      if (a.hasAttribute("data-show")) a.textContent = addr;
+    }
+  })();
+</script>
+
+</body>
+</html>

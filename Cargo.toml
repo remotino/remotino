@@ -1,0 +1,32 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "remotino-app/src-tauri", "remotino-tui"]
+# The Tauri app is a workspace member (shared lock and target dir) but NOT a default
+# member: `cargo test` and `cargo build` at the root stay fast and touch only the backend
+# crates. Build the app explicitly with `-p remotino-app` or via `npm run tauri dev`.
+default-members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.89"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/remotino/remotino"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+# The crypto core must be panic-free on untrusted input: every one of these is a
+# potential remote crash when parsing a repository written by someone else.
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+indexing_slicing = "deny"
+arithmetic_side_effects = "deny"
+todo = "warn"
+
+[profile.release]
+# Overflow checks stay on in release. The crypto core parses attacker-influenced
+# lengths; a silent wrap is worse than a crash.
+overflow-checks = true
